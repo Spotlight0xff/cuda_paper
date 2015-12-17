@@ -1,0 +1,49 @@
+\section{Hardware Architecture}
+\label{sec:hardware}
+\subsection{Overview}
+In GPGPU (general purpose graphical processing unit):
+some definitions:\\
+\textbf{Host}: typically the CPU which executes most of the serialized code and can access the GPU\\
+\textbf{Device}: the GPU itself, there can be multiple GPUs\\
+textbf{Kernel}: procedure which is executed on the device and called from the Host.\\
+\textbf{Streaming Processor (SP)} each GPU contains multiple SP which are (mostly) independent processors which can execute code.
+\textbf{Thread}: Single Instance of method invocation\\
+\textbf{Block}: Threads are grouped into Blocks\\
+\textbf{Warps}: a collection of 32 threads which are guaranteed to run on one streaming processor.\\
+\textbf{Memory}: We differentiate between Host and Device memory, which are both divided into finer units which are discussed later.\\
+
+\subsection{Memory}
+\subsubsection{Host}
+There are multiple types of Host memory. But we highlight only the RAM and CPU Cache.
+\subsubsection{Device}
+each GPU consists of global memory (usually 1236712389 Bytes) which is accessable to all threads and blocks and shared memory (usually 64(???) kB) which is only accessable to threads within the same block.
+Additionally there are L2 Cache and Register Memory.
+Global memory ~slow, shared memory fast, reg + l2 ultra fast
+\subsubsection{Transfer}
+As GPUs are usually(? exclusively?) connected to hosts via PCI the bandwidth is limited by the protocol and hardware.
+PCI-Express (? explaint Express?) has several iterations with different theoretical bandwidth limitations.
+(? make table)
+\begin{table*}
+\centering
+\begin{tabular}{c|c|c|c}
+\textbf{Generation} &   \textbf{Transfer-Rate}      & \textbf{per Lane} & \textbf{16-lane}\\
+\hline\hline
+PCIe 1.0     &   2.5 GT/s               & 2 GBit/s          & 32 Gbit/s\\
+PCIe 2.0     &   5.0 GT/s               & 4 GBit/s          & 64 GBit/s\\
+PCIe 3.0     &   8.0 GT/s               & 7.87 GBit/s       & 126 Gbit/s\\
+PCIe 4.0     &   16.0 GT/s              & 15.754 GBit/s     & 252 GBit/s\\
+\hline
+\end{tabular}
+\caption{Comparison of different iterations of the PCI Express protocol}
+\label{tab:pci_comp}
+\end{table*}
+source: pcisig.com
+\emph{**show GPU Global memory transfer rates**}
+Device Memory >> PCIe Transfer\\\\
+As we can easily see, the GPU memory is multiple times faster than the PCIe protocol theoretical maximum bandwidth.\\
+We will exploit this knowledge to achieve (?) high computational throughput (?).
+\subsection{Kernel}
+A \emph{Kernel} is a procedure (of code?) which runs on a GPU and is called from the Host.
+One invocation of a kernel is organized in a thread, which are grouped into warps, which is a logical unit of (always ?) 32 threads.
+Threads can further be put into one block. The programmer has the choice to call a kernel multiple times in a block (? bad explanation...) and into multiple parallel blocks.
+

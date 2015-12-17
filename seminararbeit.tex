@@ -1,0 +1,56 @@
+% Hauptdatei der Vorlage fuer Seminararbeiten am Lehrstuhl f{\"u}r Hochleistungsrechnen (nicht ver{\"a}ndern!)
+% Veraenderungen bitte ausschliesslich in den (an den mit "HIER": 
+% gekennzeichnenten Stellen) eingebundenen Dateien vornehmen
+
+\documentclass[10pt,          % Schriftgroesse einstellen
+               a4paper,       % Seitenformat w{\"a}hlen
+               twocolumn,     % zweispaltiges Layout
+               DIV14,         % Groesse des Satzspiegels (Warnung dazu bitte ignorieren!)
+               BCOR=8mm,      % Bindekorrektur (abgestimmt auf LfBS-Bindeger{\"a}t)
+               twoside        % Beidseitiger Druck
+               %abstract=true, % Titel des Abstract ausgeben
+              ]{scrartcl}
+\usepackage{hpcseminar}
+\usepackage[english]{babel}   % HIER: Im Falle des Falles "english"
+%\usepackage[latin1]{inputenc} % Eingabekodierung festlegen (hier: ISO 8859-1)
+                              % (Umlaute koennen so direkt eingegeben werden)  
+                              % ACHTUNG: wenn man UTF-8 verwendet, folgende Zeile nutzen:
+\usepackage[utf8]{inputenc}  % UTF-8 (viele aktuelle Editoren unter Linux, Mac und Windows)
+
+\usepackage[T1]{fontenc}      % u.a. Richtige Worttrennung
+\usepackage{lmodern}          % Verbesserte "Computer Modern"-Schriften laden
+\usepackage{graphicx}         % Grafiken einbinden
+\usepackage{units}            % Einheiten setzen mit z.B. \unit[10]{MB} und \unitfrac[100]{Mbit}{s}
+%\usepackage{siunitx}         % Wesentlich umfangreicheres Einheiten Paket als Ersatz f{\"u}r "units"
+
+% In dieser Datei koennen eigene Erweiterungen eingebracht werden
+% HIER: Nur wenn n{\"o}tig Datei my_includes.tex aendern
+\input{includes}
+
+%% Beginn des eigentlichen Dokumentes
+%%-----------------------------------
+\begin{document}
+
+%% Ein paar wichtige Details konfigurieren
+\input{config}
+
+% Titel automatisch erzeugen
+\maketitle
+
+% Abstract
+\begin{abstract}
+\input{chapters/0_abstract}
+% Automatische formatierte Ausgabe der oben angegebenen Keywords
+\keywordsline
+\end{abstract}
+
+% Hier werden die Kapitel eingebunden
+% HIER: weitere Kapitel in my_chapters.tex eintragen
+\input{chapters}
+
+% Das Literaturverzeichnis erzeugen
+% HIER: Eintraege in literatur.bib hinzufuegen
+\bibliographystyle{alpha}
+\bibliography{literatur}
+
+\end{document}

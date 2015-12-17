@@ -1,0 +1,22 @@
+\section{Memory Management}
+\label{sec:management}
+\subsection{Memory Allocation}
+We need to differentiate the allocation of host and device memory.
+While we can allocate host memory using malloc, but not exclusively, device memory is generally allocated using cudaMalloc.
+\emph{cudaMalloc()} can allocate a linear memory in the device memory, given the device has enough free memory.
+Important to note is that \emph{cudaMalloc()} is always blocking, as an alternative can cudaMallocAsync be used which uses streams (...?).
+
+
+As we will see in the fifth chapter~\ref{sec:access}, 
+it is important to access memory correctly and to simplify this, 
+we can use \emph{cudaMallocPitch} and \emph{cudaMalloc3D()} to allocate 2D and 3D memory respectively.
+
+
+
+Allocation and Deallocation are expensive operations and as a consequence we should reuse memory whereever it is possible.
+(maybe show timings?)
+
+\subsection{Streams and Synchronization}
+
+\subsection{Unified Virtual Addressing}
+\subsection{Unified Memory}

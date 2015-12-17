@@ -1,0 +1,135 @@
+%%****************************************
+%%*                                      *
+%%* RWTH Aachen University               *
+%%* Entwickelt vom Lehrstuhl f{\"u}r Betriebssysteme        *                                 *
+%%* (1. Version Rainer Finocchiaro, 2009)      *
+%%*Angepasst und Weiterentwickelt vom Lehrstuhl f{\"u}r Hochleistungsrechnen, IT Center *   *
+%%* (1. Version Sandra Wienke, 2014)           *
+%%*                                      *
+%%****************************************
+%%
+%% LaTeX-Vorlage fuer Seminarbeitr{\"a}ge
+%% 
+
+
+%% Neue User-Befehle
+%%
+%% \title                Titel der Seminararbeit
+%% \semester       z.B. Wintersemester 2008/2009
+%% \betreuer       Kommagetrennte Liste der Betreuer
+%% \maketitle       Erzeugen der Titelseite
+%% \keywords      Schl{\"u}sselw{\"o}rter angeben
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{hpcseminar}[2014/10/09 Paket fuer Seminarbeitraege]
+\RequirePackage{scrpage2}
+\RequirePackage{hyperref}		% Hyperref m{\"o}glichst sp{\"a}t laden. Vielleicht hier?
+
+% Kopf- und Fu{\"ss}zeilen setzen
+\clearscrheadfoot
+\pagestyle{scrheadings}
+\cfoot{\thepage}
+
+%% Schriftalternativen zu dem Latex-Standard: Computer Modern (CM)
+%%----------------------------------------------------------------
+%% Englaufende Times/Helvetica/Courier laden, aber mit richtigen Skalierungen (siehe l2tabu)
+%\usepackage{mathptmx}
+%\usepackage[scaled=.90]{helvet}
+%\usepackage{courier} % kann auch weggelassen werden
+%% Palatino, genauso wenig englaufend wie CM, aber riesiger Zeilenabstand
+%\usepackage{mathpazo}
+%\usepackage[scaled=.95]{helvet}
+%\usepackage{courier}
+
+%% Neue User-Befehle
+%%------------------
+\newcommand{\keywordsline}{\paragraph{Keywords:} \@keywords}
+\newcommand{\@betreuer}{}
+\newcommand{\betreuer}[1]{\renewcommand{\@betreuer}{#1}}
+\newcommand{\@semester}{}
+\newcommand{\semester}[1]{\renewcommand{\@semester}{#1}}
+\newcommand{\@keywords}{}
+\newcommand{\keywords}[1]{\renewcommand{\@keywords}{#1}}
+
+\AtBeginDocument{
+	\hypersetup{bookmarksnumbered=true,
+	            pdfcreator={Adobe Acrobat Distiller},
+	            pdfproducer={LaTex with hyperref}
+	}
+}
+
+% Eigentliche Ausgabe der Titelseite
+\renewcommand{\@maketitle}
+{%
+	\hypersetup{%
+		pdftitle={\@title},
+		pdfsubject={Seminararbeit \@semester},
+		pdfauthor={\@author},
+		pdfkeywords={\@keywords},
+	}%
+	\begin{center}
+	  \vskip 2em%
+		{\titlefont\huge \@title \par}%
+		\vskip 2em%
+		{\large\textbf{Seminararbeit}\par}%
+		{\large \@author\par}%
+		\vskip 2em%
+		{\large Lehrstuhl f{\"u}r Hochleistungsrechnen, IT Center,\\
+		RWTH Aachen, Seffenter Weg 23,\\
+		52074 Aachen, Germany\\
+		Betreuer: \@betreuer\par}%
+		\vspace*{3em}	%
+	\end{center}%
+}
+
+% Aus scrartcl.cls extrahiert, sorgt fuer richtiges Setzen bei ein-/zweispaltigem Satz
+\renewcommand{\maketitle}{
+  \if@twocolumn
+    \ifnum \col@number=\@ne
+      \@maketitle
+    \else
+      \twocolumn[\@maketitle]%
+    \fi
+  \else
+    \newpage
+    \global\@topnum\z@
+    \@maketitle
+  \fi
+}
+
+% Aus scrartcl.cls genommen und angepasst -> Kursive Schrift
+\renewenvironment{abstract}{%
+  \if@twocolumn\if@abstrt %Zweispaltig
+      \addsec*{\abstractname}
+      \it% Abstract kursiv setzen
+    \fi
+    \it% Abstract kursiv setzen
+  \else% Einspaltig
+    \if@abstrt
+      \small
+      \begin{center}
+        {\normalfont\sectfont\nobreak\abstractname
+          \vspace{-.5em}\vspace{\z@}}%
+      \end{center}
+    \fi
+    \quotation
+  \fi
+}{%
+  \if@twocolumn\else\endquotation\fi
+}
+
+% Wir wollen Latex beim Setzen des Literaturverzeichnisses
+% nicht ganz so pingelig sein lassen, da wir enge Spalten verwenden
+\newcommand{\orig@bibliography}{}
+\let\orig@bibliography\bibliography % Alte Definition in orig@... speichern
+\renewcommand{\bibliography}        % \bibliography neu definieren
+{
+	\tolerance 1414                   % Toleranzwerte setzen (siehe l2tabu)
+	\hbadness 1414                    % ...
+	\emergencystretch 1.5em           % ...
+	\hfuzz 0.3pt                      % ...
+	\widowpenalty=10000               % ...
+	\vfuzz \hfuzz                     % ...
+	\raggedbottom                     % ...
+	\orig@bibliography                % und das Originalkommando aufrufen
+}

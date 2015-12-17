@@ -1,0 +1,20 @@
+\section{Memory Transfer Optimization}
+\label{sec:transfer}
+\subsection{Pinned Memory}
+One of the most important aspects of optimization is the memory transfer
+from device and host ("und umgekehrt"/ and in reverse?).
+As we have seen in "Hardware Spec" (figure pci), PCIe 2.0 has a theoretical bandwidth of 8 GB/s.
+Unfortunely, this theoretical bandwidth is limited by several factors, most impactful the processor on the Host (? citation needed).
+To bypass this limitation it is possible to \emph{pin host memory} to the device.\\
+This means that we have direct memory access (DMA) to this memory (RAM).
+The important bit of this technique is, that this pinned memory is page-locked, so it can't be swapped ( or even accessed??) by the host system.
+As this method locks the CPU out of the equation (through DMA), we can achieve a bandwidth of 6 GB/s (in comparision to... GB/s with page-able memory)
+The drawback of this method is the impact on the host system, as it can lower the systems performance (because it blocks /lowers host memory).
+\subsection{Zero-Copy}
+Zero-Copy is a feature introduced in CUDA 4.0 (?) and is particulary useful if data is accessed once or if the GPU is integrated.
+\emph{cudaHostAlloc} allocates pinned host memory, which is mapped into device address space.
+Using this features enables programmers to access host memory without copying it to the device memory.
+This is in several scenarios useful, especially when the GPU is integrated,
+in which case the GPU has no device anyways and uses host memory.
+Another use for Zero-Copy is accessing complex structures only once, because it often tedious to create deep copies (for examples of linked lists or trees).
+We use this technique to enable data transfer concurrency without the use of streams. (...!)

@@ -1,0 +1,16 @@
+\subsection{Memory Access Optimization}
+\label{sec:access}
+\subsection{Global Memory Access}
+While the access latency and bandwidth to global memory on a device is much better in comparision to the transfer (PCIe 2.0),
+it can still be limited (? word choice!) by the programmer.
+To understand the limiting factors, we have to understand the memory access method (?) used by CUDA.\\
+CUDA automatically combines memory access transactions (?) from threads in the same warp into one transaction, provided they access adjacent memory locations.
+While this is mostly beneficial to the programmer, it can happen to stall or limit the memory access heavily.\\
+As we can see in Fig9.8 (CUDA programms: A dev's guide to parallel programming), .....
+\subsection{Memory Access Patterns Optimizations}
+While we can access global memory more efficiently, often it is more important that threads in the same block can communicate fast (? block??).
+Fast Communication and synchronization is possible with shared memory, which is quite limited in its size (max 64 kbytes?), it is much faster than the global memory.\\
+Similarly to global memory it can happen, that unfortune memory access patterns stall the computation.
+Shared memory is separated into multiple, so called \emph{banks}, of 32 Bits or 4 Bytes.\\
+Bank conflicts happen, when multiple threads in the same warp access the same bank, resulting into serialized memory access.
+Therefore (?) it is desirable to use memory access patterns where different threads access different banks to avoid this.
