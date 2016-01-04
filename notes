@@ -1,0 +1,54 @@
+introduction:
+    * CPU <> GPU
+    * CUDA framework
+    * compute capability
+
+hardware architecture:
+    Overview:
+        * host
+        * device
+        * SM
+    Memory:
+        Device:
+            * global
+            * shared
+            * registers
+            * local
+            * L1
+            * L2
+        Transfer:
+            * PCIe protocol characteristics
+            * PCIe generation overview / comparison
+            * comparison to global memory / device memory
+    Kernel:
+        * ??
+        * threads/blocks/grid...?
+memory management:
+    allocation:
+        dynamic allocation
+        pitches layout
+    streams and synchronization:
+        synchronization:
+        streams:
+    Unified Virtual Addressing (UVA):
+    Unified Memory
+memory transfer optimization:
+    pinned memory:
+        portable:
+        mapped:
+        wcpm?:
+    Zero-Copy:
+Memory access optimization:
+    global memory access:
+        CC 1.x (Tesla):
+        CC 2.x (Fermi):
+        CC 3.x (Kepler):
+        CC 5.x (Maxwell):
+        2d access (pitched)
+        * example code, show throughput table
+    shared memory access:
+        * shared memory fast, on-chip
+        * configurable size, 64 kb
+        * using 32 memory banks => high performance, different bandwith (CC related)
+        * bank conflicts, diff CCs
+        * example code, show throughput table

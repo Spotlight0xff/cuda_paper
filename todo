@@ -1,0 +1,20 @@
+measure performance:
+
+zero-copy:
+* comparing vectorAdd
+
+pinned memory:
+* simple throughput example
+
+global memory access:
+* matrix multiplication ?
+
+shared memory access:
+* continue with example, dotproduct
+
+advanced topics:
+* memory divergence?
+* cache hitrate
+* texture cache
+* occupancy
+* latency hiding through parallelism
