@@ -1,22 +1,41 @@
 \section{Memory Management}
 \label{sec:management}
 \subsection{Memory Allocation}
+\label{sec:mem_alloc}
 We need to differentiate the allocation of host and device memory.
 While we can allocate host memory using malloc, but not exclusively, device memory is generally allocated using cudaMalloc.
 \emph{cudaMalloc()} can allocate a linear memory in the device memory, given the device has enough free memory.
 Important to note is that \emph{cudaMalloc()} is always blocking, as an alternative can cudaMallocAsync be used which uses streams (...?).
 
 
-As we will see in the fifth chapter~\ref{sec:access}, 
-it is important to access memory correctly and to simplify this, 
-we can use \emph{cudaMallocPitch} and \emph{cudaMalloc3D()} to allocate 2D and 3D memory respectively.
-
-
 
 Allocation and Deallocation are expensive operations and as a consequence we should reuse memory whereever it is possible.
 (maybe show timings?)
-
+\subsubsection{Dynamic Allocation}
+Since compute capability 2.x, CUDA developers can allocate global memory in their kernels using \emph{malloc()} and operate using \emph{memset()} and \emph{memcpy()}.
+\subsubsection{Pitched Layout}
+Due to coalescing constrains, which we will discuss in depth in ~\ref{sec:access}, it is possible to allocate \emph{pitched memory}.\\
+This memory is used for 2D and 3D memory, where the column or row number is not easily divided by a power of 2.\\
+Therefore we can allocate this memory using a padding, where we use more memory than we need, but align the data in a way in which it is easily accessible.\\
+Illustration:
 \subsection{Streams and Synchronization}
-
+\subsubsection{Synchronization}
+In a highly parallized enviroment like CUDA, it is critical to synchronize the threads to allow benefitial collaboration.\\
+CUDA provides several mechanics for developers to enable and simplify this process. CUDA applications has to synchronize on several depths, first on the threadblock level, where threads have to synchronize using shared memory and \_\_syncthreads() its work.\\
+Secondly interblock synchronization can be implemented using cudaEventSynchronize() and \emph{cudaStreamSynchronize()}. Lastly (?), CUDA events may be used with \emph{cudaStreamWaitEvent()} to enable inter-GPU synchronization.\\
+Additionally, there is the possibility to use atomic operations which are guaranteed to be "unteilbar"?? on device memory and are implemented by the graphics memory controller. 
+\subsubsection{Streams}
+\label{sec:streams}
+Operations like memory copy or kernel launches are enqueued into a sequence, which is called a \emph{stream} in CUDA.\\
+It is possible and often advantagous due to parallelized matters to use multiple streams which are able to run concurrently.\\
+Using streams it is possible to implement for example overlapped data transfer.
 \subsection{Unified Virtual Addressing}
+\label{sec:uva}
+Before the introduction of \emph{Unified Virtual Addressing} (UVA) in CUDA 4, address spaces of device and host were separate, which implied that every memory transfer has to specify which address space to target. (? expression)\\
+UVA combines both address spaces to create a single unified virtual address space in which data from both device and host reside. This concept results in a simplified view of memory and enables the developer to stop using \texttt{cudaMemcpyDeviceToHost} and \texttt{|cudaMemcpyHostToDevice|} and use \texttt{cudaMemcpyDefault} in \emph{cudaMemcpy} methods.
+Because of the unified address space, UVA only works on 64 bit operating systems, as 32 bit systems can only allocate roughly 4 GB and modern computers often exceed these limitations, especially combined with device memory.\\
+UVA also enables \emph{Zero-Copy}~\ref{sec:zerocopy}.
 \subsection{Unified Memory}
+\label{sec:unified_memory}
+\emph{Unified Memory}, introduced in CUDA 6, simplifies memory management with managed memory which is available to device and host equally.\\
+With Unified Memory it is possible to allocate memory using \emph{cudaMallocManaged} and pass the pointer to a kernel, which is able to operate directly on it without the use of copies.

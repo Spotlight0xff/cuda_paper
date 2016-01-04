@@ -1,10 +1,16 @@
 \section{Introduction}
 \label{sec:intro}
-CUDA is an API by NVIDIA to utilize GPUs for accelerated computation.
-This Framework is currently in its 7th version and we will discuss it at this point in time.
-GPUs have a different approach to computation, 
-as they have far more cores and are therefore able to process code more concurrently.
-To utlize this potential we have to pass data efficiently to the GPU and process it in a parallelized manner.
-We will focus in this paper on the memory transfer and access optimization.
-First, we have to understand the hardware architecture to recognize the possible limitations and bottlenecks.
-After that, we will discuss some memory transfer optimization and then two memory access patterns.
+Performance optimizations of CUDA applications, or any high performance GPU computing program for that matter, can be roughly seperated into three sections.\\
+First, increasing instruction usage to maximize instruction troughput.\\
+Secondly, utilize the GPU hardware to its full extent by maximizing parallelized execution.\\
+While touching parts of the second section, we will focus our optimizating efforts on the third section (? other word), 
+optimizing the memory transfer and access to achieve the highest possible memory throughput/bandwidth(?).\\
+\\
+In the first two chapters we will briefly outline (double?) the CUDA library, hardware architecture and the CUDA memory management.\\
+Then, the main topic of this paper will be highlighted: the optimization of memory transfer and access.\\
+As both GPUs and CUDA itself matured over time and CUDA is backwards-compatible, but not fordware-compatible,
+focus will be on CUDA at version 7.5 and on devices of compute capability 2.x to 5.x.\\
+%CUDA platform-independent and device-independent is an API by NVIDIA to utilize GPUs for accelerated computation.\\
+%As both GPUs and CUDA itself matured over time, we will discuss CUDA at version 7.5 and highlight devices of compute capability 2.x to 5.x.\\
+%To enable high performance computation, we have to efficiently pass data around and optimize access to memory.\\
+%Prior to the discussion of optimization techniques, we will outline the basics of computation using GPUs with CUDA.

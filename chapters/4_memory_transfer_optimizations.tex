@@ -1,17 +1,28 @@
 \section{Memory Transfer Optimization}
 \label{sec:transfer}
 \subsection{Pinned Memory}
-One of the most important aspects of optimization is the memory transfer
-from device and host ("und umgekehrt"/ and in reverse?).
+One of the most important aspects of optimization is the memory transfer between host and device.
 As we have seen in "Hardware Spec" (figure pci), PCIe 2.0 has a theoretical bandwidth of 8 GB/s.
-Unfortunely, this theoretical bandwidth is limited by several factors, most impactful the processor on the Host (? citation needed).
-To bypass this limitation it is possible to \emph{pin host memory} to the device.\\
-This means that we have direct memory access (DMA) to this memory (RAM).
-The important bit of this technique is, that this pinned memory is page-locked, so it can't be swapped ( or even accessed??) by the host system.
-As this method locks the CPU out of the equation (through DMA), we can achieve a bandwidth of 6 GB/s (in comparision to... GB/s with page-able memory)
-The drawback of this method is the impact on the host system, as it can lower the systems performance (because it blocks /lowers host memory).
+Unfortunely, this theoretical bandwidth is limited by several factors, most impactful the processor on the host (? citation needed) and the overhead (? again).
+To bypass this limitation it is possible to use \emph{page-locked host memory}, which is being prevented from being swapped out by the host systems memory management, and is therefore backed by physical memory.\\
+This enables the device to setup \emph{Direct Memory Access} (DMA), with which it is possible to access the pinned host memory without the involvement of the CPU.
+Resulting into higher bandwidth and lower system load for the host, it is one of the simpliest yet most effective ways to improve memory transfer.\\
+** COMPARING GRAPHICS **\\
+While host memory is page-locked, it can't be accessed (?? investigate.) and used by the platforms memory management which results possibly in a situation where the host system has not enough available physical memory and has to swap memory, affecting the systems performance significantly.\\
+More features got added to pinned memory in CUDA 2.2, which we will examine now.
+\subsubsection{Portable Pinned Memory}
+Pinned Memory can be marked \emph{portable}, when it is required to access data on multiple CUDA units, because an allocation made by one GPU is by default only accessible to the allocator.\\
+Applications can request that the memory is portable so that the data is mapped by all GPUs.\\
+With UVA in effect, pinned memory is per default marked portable.
+\subsubsection{Mapped Pinned Memory}
+Introduced in CUDA 2.2, it is possible to map pinned memory directly into the CUDA address space, which enables the developer to write directly to host memory.\\
+This eliminates the need for device memory allocation, especially in a situation where data has to be only read or written once, it is preferable to use mapped memory instead of memory copies.\\
+Using mapped pinned memory it is important to align the data properly to have its access coalesced as described in ~\ref{sub:global}.
+With UVA in effect, CPU and GPU share the same address space and therefore the same address can be used so there is no need to update both allocation tables.
+\subsubsection{Write-Combined Pinned Memory}
+TODO
 \subsection{Zero-Copy}
-Zero-Copy is a feature introduced in CUDA 4.0 (?) and is particulary useful if data is accessed once or if the GPU is integrated.
+Zero-Copy is a feature introduced in CUDA 2.2 to allow direct access to host memory without explicit memory copies.This is particulary useful if data is accessed once or if the GPU is integrated.
 \emph{cudaHostAlloc} allocates pinned host memory, which is mapped into device address space.
 Using this features enables programmers to access host memory without copying it to the device memory.
 This is in several scenarios useful, especially when the GPU is integrated,
