@@ -63,18 +63,23 @@ endif
 # Target rules
 all: build
 
-build: zeroCopy
+build: vectorAdd_zcp vectorAdd_copy
 
-zeroCopy.o:zeroCopy.cu
+vectorAdd_zcp.o:vectorAdd_zcp.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-zeroCopy: zeroCopy.o
+vectorAdd_zcp: vectorAdd_zcp.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 
+vectorAdd_copy.o:vectorAdd_copy.cu
+	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
+
+vectorAdd_copy: vectorAdd_copy.o
+	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 run: build
-	$(EXEC) ./zeroCopy
+	$(EXEC) ./vectorAdd_zcp
 
 clean:
-	rm -f zeroCopy zeroCopy.o zeroCopy.ptx zeroCopy.module_id zeroCopy_dlink* zeroCopy.hash zeroCopy.sm* zeroCopy.cpp* zeroCopy.cuda* zeroCopy.cu.cpp* zeroCopy_dlink* zeroCopy.fatbin*
+	rm -f vectorAdd_zcp vectorAdd_zcp.o vectorAdd_copy vectorAdd_copy.o 
 
 clobber: clean
