@@ -1,41 +1,57 @@
 \section{Memory Management}
 \label{sec:management}
 \subsection{Memory Allocation}
-\label{sec:mem_alloc}
+\label{mem_alloc}
 We need to differentiate the allocation of host and device memory.
+
 While we can allocate host memory using malloc, but not exclusively, device memory is generally allocated using cudaMalloc.
 \emph{cudaMalloc()} can allocate a linear memory in the device memory, given the device has enough free memory.
-Important to note is that \emph{cudaMalloc()} is always blocking, as an alternative can cudaMallocAsync be used which uses streams (...?).
-
-
-
-Allocation and Deallocation are expensive operations and as a consequence we should reuse memory whereever it is possible.
-(maybe show timings?)
+Important to note is that \emph{cudaMalloc()} is always blocking though one is able to use \emph{cudaMallocAsync} instead and overlap transfer and kernel execution using streams.
+Especially allocation of global memory is expensive and should not be used in performance crititcal sections.\\
+On a test system with a GTX 750 ( CC 5.0, 1GB global memory), allocating 200MB costs about 60 milliseconds, while deallocation costs just above 200 microseconds.
 \subsubsection{Dynamic Allocation}
 Since compute capability 2.x, CUDA developers can allocate global memory in their kernels using \emph{malloc()} and operate using \emph{memset()} and \emph{memcpy()}.
 \subsubsection{Pitched Layout}
-Due to coalescing constrains, which we will discuss in depth in ~\ref{sec:access}, it is possible to allocate \emph{pitched memory}.\\
-This memory is used for 2D and 3D memory, where the column or row number is not easily divided by a power of 2.\\
-Therefore we can allocate this memory using a padding, where we use more memory than we need, but align the data in a way in which it is easily accessible.\\
-Illustration:
+\label{pitch}
+As it is desired to have aligned memory ( which will be highlighted in \ref{global_access} ), CUDA provides the possibility to allocate \emph{pitched memory},
+that is mostly two dimensional or three dimensional memory padded aligned to meet the hardware requirements for coalesced access.\\
+To use this feature, \emph{cudaMallocPitch()} and \emph{cudaMalloc3D} is available for two dimensional and three dimensional arrays, respectively.\\
+For example, allocating a two dimensional array with the geometries of 384 columns and 64 rows using \emph{cudaMallocPitch()} may result in a memory allocation
+covering 512 columns and 64 rows ( on CUDA 7.5 system with GTX 750).\\
+Indexing a pitched memory works with the following formula:\\
+$$ (base + row * pitch) + column$$\\
 \subsection{Streams and Synchronization}
 \subsubsection{Synchronization}
+\label{sync}
 In a highly parallized enviroment like CUDA, it is critical to synchronize the threads to allow benefitial collaboration.\\
 CUDA provides several mechanics for developers to enable and simplify this process. CUDA applications has to synchronize on several depths, first on the threadblock level, where threads have to synchronize using shared memory and \_\_syncthreads() its work.\\
 Secondly interblock synchronization can be implemented using cudaEventSynchronize() and \emph{cudaStreamSynchronize()}. Lastly (?), CUDA events may be used with \emph{cudaStreamWaitEvent()} to enable inter-GPU synchronization.\\
 Additionally, there is the possibility to use atomic operations which are guaranteed to be "unteilbar"?? on device memory and are implemented by the graphics memory controller. 
 \subsubsection{Streams}
-\label{sec:streams}
+\label{streams}
 Operations like memory copy or kernel launches are enqueued into a sequence, which is called a \emph{stream} in CUDA.\\
 It is possible and often advantagous due to parallelized matters to use multiple streams which are able to run concurrently.\\
 Using streams it is possible to implement for example overlapped data transfer.
 \subsection{Unified Virtual Addressing}
-\label{sec:uva}
+\label{uva}
 Before the introduction of \emph{Unified Virtual Addressing} (UVA) in CUDA 4, address spaces of device and host were separate, which implied that every memory transfer has to specify which address space to target. (? expression)\\
 UVA combines both address spaces to create a single unified virtual address space in which data from both device and host reside. This concept results in a simplified view of memory and enables the developer to stop using \texttt{cudaMemcpyDeviceToHost} and \texttt{|cudaMemcpyHostToDevice|} and use \texttt{cudaMemcpyDefault} in \emph{cudaMemcpy} methods.
 Because of the unified address space, UVA only works on 64 bit operating systems, as 32 bit systems can only allocate roughly 4 GB and modern computers often exceed these limitations, especially combined with device memory.\\
-UVA also enables \emph{Zero-Copy}~\ref{sec:zerocopy}.
+It is also required to enable \nameref{zerocopy}.\\
 \subsection{Unified Memory}
-\label{sec:unified_memory}
-\emph{Unified Memory}, introduced in CUDA 6, simplifies memory management with managed memory which is available to device and host equally.\\
-With Unified Memory it is possible to allocate memory using \emph{cudaMallocManaged} and pass the pointer to a kernel, which is able to operate directly on it without the use of copies.
+\cite{parallel_for_all_unified_memory, }
+\label{unified_memory}
+One of the key features of CUDA 6 is \emph{Unified Memory}, which simplified the memory view by introducing a managed memory space which is shared
+across all CPUs and GPUs of the host system.\\
+This enables developers to write simplified code without the need of explicit memory copies using a single pointer to data
+while the CUDA driver manages the neccessary memory transfers/migitations.\\
+Allocation in managed space is done using \emph{cudaMallocManaged()} which allows fast prototyping and porting.\\
+Though the CUDA Runtime manages tries to enable data locality through transparent data migration,
+it is not better than a capable CUDA programmer in anticipating data transfer and concurrency.\\
+Therefore Unified Memory exsels in several scenarios:\\
+%TODO explain exactly *WHY* Unified memory solves theses problems
+\begin{itemize}
+        \item The single pointer to data allows fast prototyping of code and early porting of code formerly run on CPU by reducing the development time and effort significantly.
+        \item It is neccessary to access complex structures sparsely where the effort of doing a deep copy of the data is not reasonable.
+        \item While learning how CUDA works, it may be desirable to focus on the parallelized mechanisms without having to worry about memory copies.
+\end{itemize}

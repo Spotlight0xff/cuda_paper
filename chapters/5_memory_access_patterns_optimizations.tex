@@ -1,13 +1,13 @@
 \section{Memory Access Optimization}
 \label{sec:access}
 \subsection{Global Memory Access}
-\label{sec:global}
-Access to global memory has a bandwidth which can exceed 200 GB/s ( for example with GDDR5 memory), but the peak bandwidth can rarely be achieved due to unfortune access patterns.\\
-Though more recent hardware have improved the situation with coalescing access (?) vastly, applications striving for high performance will still have to optmize its memory access.\\
-Most imporantly in accessing memory is size and alignment.
-Memory access is handled different in various chips, so we will take a short look at how multiple hardware microarchitectures handle coalescing global memory access.\\
-\subsubsection{Tesla-class hardware ( SM 1.x)}
-The first iteration of streaming processors (abbreviated SM), SM version 1.0 and 1.1 required that each thread in a warp accesses increasing and coherent memory addresses.\\ 
+\label{global_access}
+Access to global memory has a theoretical bandwidth which can exceed 200 GB/s ( for example with GDDR5 memory), but the peak bandwidth can rarely be achieved due to unfortune access patterns.\\
+As touched on in \ref{hardware_global}, CUDA tries to merge memory requests from a group of threads together in order to improve global memory performance.\\
+One such group of 32 threads, called \emph{warp} will coalesce its access through different algorithms and mechanisms for devices of each compute capability.\\
+%Though more recent hardware have improved the situation with coalescing access (?) vastly, applications striving for high performance will still have to optmize its memory access.\\
+\subsubsection{Tesla-class hardware ( C 1.x)}
+The first iteration of streaming processors required that each thread in a warp accesses increasing and coherent memory addresses.\\ 
 Next version, SM 1.2 and 1.3 chips have implemented an algorithm to fullfil the memory requests on a \emph{half-warp}, 16 threads:\\
 \begin{enumerate}
     \item select the active thread with the lowest thread ID, find out the segment corresponding to the memory request, 1-byte requests result in 32-byte segments, 2-byte requests will result in 64-byte segments, all other requests result in 128-byte segments. (umschreiben...)
@@ -22,7 +22,6 @@ Beginning with Fermi, memory was primarily accessed using caches, namely L1 and 
 \subsubsection{Kepler-class hardware ( SM 3.x)}
 With Kepler all global memory access is cached through L1 while L2 is reserved for local memory requests.\\
 Starting with SM 3.5, chips have the capability to use the texture cache to fulfil memory requests aswell.\\
-\\
 \subsubsection{Two Dimensional Access}
 Touched earlier on with \emph{cudaMallocPitched}, two dimensional arrays have to be properly sized to have its access coalesced, having both width and height multiples of the warp size.\\
 To bypass the limitation of being forced into a fixed array size, CUDA provides the \emph{cudaMallocPitch()} and \emph{cudaMalloc3D} (for cubic arrays) to have the arrays embedded into a memory layout with properly aligned sizes.
@@ -30,7 +29,7 @@ To bypass the limitation of being forced into a fixed array size, CUDA provides 
 As we can see in Fig9.8 (CUDA programms: A dev's guide to parallel programming), .....
 Memory allocated by the CUDA Runtime API ( i.e. cudaMalloc and similar) are guaranteed to be aligned to at least 256 bytes (c best practices).\\
 \subsection{Shared Memory Access}
-\label{sub:shared}
+\label{shared_access}
 %Due to it being on-chip, shared memory has extremly fast access times and very high bandwidth for threads on the multiprocessor. Therefore it is mostly used to exchange and synchronize between threads in a block.\\
 %Shared memory is accessed using 32 memory banks which all yield a bandwidth of 32 bits per bank per clock cycle.
 %This low-latency memory can be accessed concurrently using memory banks, which are  
@@ -52,7 +51,7 @@ If several threads access the same word in a shared memory location, the hardwar
 Fermi-class hardware have 32 memory banks each yielding a bandwidth of 32 bits every two clock cycles.\\
 successive 32-bit words will be mapped to successive memory banks. Accessing the same word in a memory bank will not generate a bank conflict, for read access, the word will be broadcasted to all requesting threads while write access is granted to one of the threads, though undefined which one.\\ 
 \subsubsection{Compute Capability 3.x}
-With Kepler, two different operating modes have been added, while still maintaining 32 memory banks, but increased bandwidth to 64-bit per clockcycle.\\\\
+With Kepler, two different operating modes have been added, while still maintaining 32 memory banks, but increased bandwidth to 64-bit per clockcycle.\\
 In \textbf{32-bit mode}, 32-bit words will be mapped to successive memory banks exactly like with devices of CC 2.x, it will generate less or equal bank conflicts, as two threads in a warp are able to access any subword in a 32-bit word. In this case, the 32-bit word will be broadcasted to the requesting threads. (elaborate on alignment needed, see c programming guide).
 For kernels operating on \emph{double} or 8-byte values, it is often preferable to use \textbf{64-bit mode} where successive 64-bit words are assigned to successive banks.
 In the eight byte configuration, bank conflicts occur when two or more threads in a warp request different 64-bit words from the same bank. In the four byte configuration, bank conflicts occur if two or more threads in a warp access 32-bit words from the same bank where those words span multiple 64-word aligned segments (Figure 1). (copied!!!) \\

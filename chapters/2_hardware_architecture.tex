@@ -1,46 +1,43 @@
 \section{Hardware Architecture}
 \label{sec:hardware}
 \subsection{Overview}
-In contrast to the more sequential CPU computational flow, GPUs work highly parallelized using \textbf{threads}, which are 
+Each GPU contains several multiprocessors (current hardware up to 
+In contrast to the more sequential CPU computational flow, GPUs work highly parallelized.
+
+This parallelization is because of many more computational cores 
+
 Due to GPU hardware having more cores than CPUs, computation is organized into threads which are meant to be executed in parallel, grouped into multiple \textbf{blocks}, called a \textbf{grid}. Both grids and threadblocks can have a dimension up to 3. Using these constructs, it is easily possible to index a multidimensional structure.\\
-This results in following illustration:\\
-%\includegraphics{media/grid-of-thread-blocks.png}
-\includegraphics[scale=0.6]{media/threads_blocks_grid.png}
-(source: c programming guide)
+Grids are created upon a call of a \textbf{kernel} - that is a code sequence running on CUDA-capable devices - (?). Below is an illustrated overview of one two dimensional grid (3x3) of blocks each running a number of threads.\\
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.5]{media/threads_blocks_grid.png}
+\end{figure}
 \\
-Grids are created upon a call of a \textbf{kernel} from the CPU, called \textbf{host} in this context.
-Upon a kernel launch, a grid with the desired dimensions is created, containing blocks of threads.
-In GPGPU (general purpose graphical processing unit):
-some definitions:\\
-\textbf{Host}: typically the CPU which executes most of the serialized code and can access the GPU\\
-\textbf{Device}: the GPU itself, there can be multiple GPUs\\
-textbf{Kernel}: procedure which is executed on the device and called from the Host.\\
-\textbf{Streaming Processor (SP)} each GPU contains multiple SP which are (mostly) independent processors which can execute code.
-\textbf{Thread}: Single Instance of method invocation\\
-\textbf{Block}: Threads are grouped into Blocks\\
-\textbf{Grid}: Threadblocks called in a kernel launch.\\
-\textbf{Warps}: a collection of 32 threads which are guaranteed to run on one streaming processor.\\
-\textbf{Memory}: We differentiate between Host and Device memory, which are both divided into finer units which are discussed later.\\
-\\\\
-The CPU, called \textbf{Host} can launch \textbf{Kernels}, which are code sequences designed to run on CUDA-capable devices and meant to run in parallel.\\ 
-To make use of the high level of parallelization, kernel calls are grids, which are seperated into several blocks of threads.
 CUDA assigns blocks to streaming multiprocessors, 
 \subsection{Memory}
 \subsubsection{Device}
 \paragraph{Global Memory}
-The most ample of all GPU memory, often exceeding several gigabytes, is accessible to all threads on the GPU and per PCIe even to the host.\\
-In comparison to the memory transfer between host and device per PCIe, global memory has 
-It is seperated from the multiprocessors, resulting in a higher latency ( 400 - 600 clock cycles, but often hidden through parallelism) but still maintains a high bandwidth (as high as 200 GB/s in the case of GDDR5).\\
-As global memory is accessed via memory transactions, these have to be naturally aligned to 32, 64 or 128 bytes which equal the transaction size.\\
-The high latency, though often hidden through thread parallelism, can impose (?) a performance loss and because of that CUDA will try to merge as many memory transactions as possible. We will explore the coalescing constrains(?) later in ~\ref{sec:access}.\\
+\label{hardware_global}
+The most ample of all GPU memory, often exceeding several gigabytes on current hardware, is accessible to all threads on the GPU and per PCIe even to the host.\\
+Global memory is located off-chip, resulting in a higher latency around 500 clock cycles which is often hidden through thread parallelism but still a way higher bandwidth than the connection per PCI Express between host and device.\\
+Memory transactions are used to global memory and these have to be aligned to their transaction size of 32, 64 or 128 bytes.\\
+The high latency can impose a significant performance loss, to minimize its impact CUDA will try to merge as many transactions as possible. We will explore these coalescing mechanisms later in ~\ref{global_access}.\\
 \paragraph{Shared Memory}
 Due to being located on-chip, therefore resulting in low-latency, high-bandwidth memory, shared memory is used to exchange data between threads in a block and synchronize them.\\
 Additionally shared memory is ideally suited to manually cache global memory.\\
 \paragraph{Registers}
-Data used without keywords (shared, global aka device) in a kernel often leads to storage in registers, as long as they can hold it.\\
-There are some thousand registers available to use for each SM, but as they are partitioned between different threads they may only hold values or small structures.\\
+Data used without keywords (shared, global aka device) in a kernel are stored in registers, as long as they can hold it.\\
+Though there are multiple thousands register (between 32K and 128K for current hardware) available for use by the compiler,
+these registers have to be split between concurrently running threads on a multiprocessor.\\
+Should the compiler decide that local data is too big to be hold in register only,
+it will be stored in local memory which is by orders slower than registers or shared memory.\\
+This phenomenon is called \emph{register pressure} and should be avoided by investigating local memory usage
+and using shared memory.\\
 \paragraph{Local Memory}
-Data not fitting into registers will be stored in local memory, which has the same characteristics as global memory and should be avoided as much as possible.\\
+Contrary to its name is local memory not located on-chip, but in global memory.
+Therefore it inherits its characteristics, most important the high latency which may limit an applications performance immensly.
+To avoid local memory usage, the compiler supports a switch called \emph{--ptxas-options=-v} with which several information regarding
+the generated code is shown. 
 \paragraph{L1 Cache}
 L1 Cache is on-chip memory, caching access to local memory. Shared memory and L1 cache are sharing the same memory space. \\
 \paragraph{L2 Cache}
