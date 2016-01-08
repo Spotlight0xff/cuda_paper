@@ -1,0 +1,19 @@
+1. Introduction
+2. Hardware architecture
+    2.1 Overview
+    2.2 Memory
+        2.2.1 Host
+        2.2.2 Device
+        2.2.3 Transfer
+3. Memory Management
+    3.1 Memory Allocation
+    3.2 Streams and Synchronization
+    3.3 Unified Virtual Addressing
+    3.4 Unified Memory
+4. Memory Transfer Optimizations
+    4.1 Pinned Memory
+    4.2 Zero-Copy
+5. Memory Access Patterns Optimizations
+    5.1 Global Memory Access
+    5.2 Shared Memory Access
+6. Conclusions
