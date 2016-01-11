@@ -18,7 +18,7 @@
 \usepackage{lmodern}          % Verbesserte "Computer Modern"-Schriften laden
 \usepackage{graphicx}         % Grafiken einbinden
 \usepackage{units}            % Einheiten setzen mit z.B. \unit[10]{MB} und \unitfrac[100]{Mbit}{s}
-%\usepackage{siunitx}         % Wesentlich umfangreicheres Einheiten Paket als Ersatz f{\"u}r "units"
+\usepackage[binary-units = true]{siunitx}         % Wesentlich umfangreicheres Einheiten Paket als Ersatz f{\"u}r "units"
 
 % In dieser Datei koennen eigene Erweiterungen eingebracht werden
 % HIER: Nur wenn n{\"o}tig Datei my_includes.tex aendern
@@ -41,12 +41,7 @@
 \keywordsline
 \end{abstract}
 
-% Hier werden die Kapitel eingebunden
-% HIER: weitere Kapitel in my_chapters.tex eintragen
 \input{chapters}
-
-% Das Literaturverzeichnis erzeugen
-% HIER: Eintraege in literatur.bib hinzufuegen
 \bibliographystyle{alpha}
 \bibliography{literatur}
 
