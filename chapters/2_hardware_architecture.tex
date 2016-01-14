@@ -1,61 +1,102 @@
 \section{Hardware Architecture}
 \label{sec:hardware}
+CUDA has wrapped the GPU hardware architecture into a logical hardware view which we will explore below.\\
 \subsection{Overview}
-In contrast to the more sequential CPU computational flow, GPUs work highly parallelized using \textbf{threads}, which are 
-Due to GPU hardware having more cores than CPUs, computation is organized into threads which are meant to be executed in parallel, grouped into multiple \textbf{blocks}, called a \textbf{grid}. Both grids and threadblocks can have a dimension up to 3. Using these constructs, it is easily possible to index a multidimensional structure.\\
-This results in following illustration:\\
-%\includegraphics{media/grid-of-thread-blocks.png}
-\includegraphics[scale=0.6]{media/threads_blocks_grid.png}
-(source: c programming guide)
-\\
-Grids are created upon a call of a \textbf{kernel} from the CPU, called \textbf{host} in this context.
-Upon a kernel launch, a grid with the desired dimensions is created, containing blocks of threads.
-In GPGPU (general purpose graphical processing unit):
-some definitions:\\
-\textbf{Host}: typically the CPU which executes most of the serialized code and can access the GPU\\
-\textbf{Device}: the GPU itself, there can be multiple GPUs\\
-textbf{Kernel}: procedure which is executed on the device and called from the Host.\\
-\textbf{Streaming Processor (SP)} each GPU contains multiple SP which are (mostly) independent processors which can execute code.
-\textbf{Thread}: Single Instance of method invocation\\
-\textbf{Block}: Threads are grouped into Blocks\\
-\textbf{Grid}: Threadblocks called in a kernel launch.\\
-\textbf{Warps}: a collection of 32 threads which are guaranteed to run on one streaming processor.\\
-\textbf{Memory}: We differentiate between Host and Device memory, which are both divided into finer units which are discussed later.\\
-\\\\
-The CPU, called \textbf{Host} can launch \textbf{Kernels}, which are code sequences designed to run on CUDA-capable devices and meant to run in parallel.\\ 
-To make use of the high level of parallelization, kernel calls are grids, which are seperated into several blocks of threads.
-CUDA assigns blocks to streaming multiprocessors, 
+% todo write more about cuda gpu graphics <-> cuda
+GPUs provide us with large amounts of computional power, which needs a specialized model to function and provide accelerated results.
+% cuda supports the management of...
+CUDA supports us with this by giving us the tools to manage highly parallelized code flow and process large datasets without adding too much complexity.
+
+\paragraph{Threads}
+To utilize the potential of the highly parallized work flow of GPUs, CUDA is able to run code sequences, called \textbf{kernels}, on devices in parallel.\\
+Due to GPU hardware having many more cores than CPUs, computation is organized into \textbf{threads} which are meant to be executed concurrently.
+These threads are grouped into multiple \textbf{blocks} which in turn are called a \textbf{grid}.
+Both grids and threadblocks can be up to three-dimensional, useful for operating directly on more-dimensional data.\\
+\paragraph{Kernel execution}
+CUDA kernel code is integrated into host code and can be called inline using:
+\begin{lstlisting}{language=c}
+kernel<<<gridSize, blockSize>>>(args);
+\end{lstlisting}
+Additionally there are two more launch options available which we will use later in \ref{streams} and \ref{shared_access}.\\
+Kernels are defined similar to normal C functions with the addition of the $ \_\_global\_\_ $ keyword to indicate that they are running on the GPU.
+Within the kernel it is important to identify in which threadblock it is currently running and 
+which thread of the threadblock is being executed.\\
+To support this, CUDA has implemented several variables which hold identifying data:\\
+\begin{itemize}
+    \item \emph{threadIdx} of type \emph{dim3} to index the thread with a threadblock.
+    \item \emph{blockIdx} of type \emph{dim3} to index the block within the grid.
+    \item \emph{blockDim} containing the dimensions of the current block.
+    \item \emph{gridDim} containing the dimensions of the grid in which the kernel is executed.
+\end{itemize}
+With these four variables it is possible to uniquely identify each thread and allow directly indexing of multi-dimensional data.\\
+% kernel execution
+\paragraph{Warp execution}
+GPUs contain one or more streaming multiprocessors (SM), each consisting of some hundred CUDA cores, special function units for floating-point arithmetic and multiple warp schedulers.\\
+% instructed, partitions (verb?)
+When a GPU is instructed by CUDA like a kernel call, each threadblock is assigned to a multiprocessor which partitions the threadblocks into a group of 32 threads, called warps.\\
+Each warp can now execute the threads using the SIMT model (Single Instruction, Multiple Threads),
+which means that each warp-thread executes the same instructions if needed, however the data on which it operates changes.\\
+This model is very similar to SIMD (Single Instruction, Multiple Data) but relaxing the condition that every thread has to follow the same flow path and have the same register set, enabling flow divergence.\\
 \subsection{Memory}
+Memory is one of the most important tools in any computation as it is required to receive input,
+write output to and operate on it.\\
+In GPGPU computing it is even more important because often it
+is required to handle much larger datasets than in traditional computing in a more conccurent way.
+This can lead to problems which we will try to resolve in section \ref{sec:access}.\\
 \subsubsection{Device}
+%\cite{http://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#device-memory-spaces}
+%\cite{best_prac}
 \paragraph{Global Memory}
-The most ample of all GPU memory, often exceeding several gigabytes, is accessible to all threads on the GPU and per PCIe even to the host.\\
-In comparison to the memory transfer between host and device per PCIe, global memory has 
-It is seperated from the multiprocessors, resulting in a higher latency ( 400 - 600 clock cycles, but often hidden through parallelism) but still maintains a high bandwidth (as high as 200 GB/s in the case of GDDR5).\\
-As global memory is accessed via memory transactions, these have to be naturally aligned to 32, 64 or 128 bytes which equal the transaction size.\\
-The high latency, though often hidden through thread parallelism, can impose (?) a performance loss and because of that CUDA will try to merge as many memory transactions as possible. We will explore the coalescing constrains(?) later in ~\ref{sec:access}.\\
+\label{hardware_global}
+Out of all GPU memory it is the largest, often exceeding several gigabytes on current hardware and is, as its name says, accessible to all threads and per PCIe to the host and even other devices.\\
+It is often also called device memory and has a very high bandwidth in the order of 100 GB/s,
+% todo reference
+although it has a high latency around 500 clock cycles which is often hidden through thread parallelism which will be explained in \ref{thread_parallelism}.\\
+To reduce the significant performance loss of having too many memory requests per thread it is required to have its memory access coalesced
+which is explained in detail in \ref{global_access}.
+%The memory transactions used to access device memory have to be aligned to their transaction size of 32, 64 or 128 bytes.\\
+%The high latency can impose a significant performance loss, to minimize its impact CUDA will try to merge as many transactions as possible. We will explore these coalescing mechanisms later in ~\ref{global_access}.\\
 \paragraph{Shared Memory}
-Due to being located on-chip, therefore resulting in low-latency, high-bandwidth memory, shared memory is used to exchange data between threads in a block and synchronize them.\\
-Additionally shared memory is ideally suited to manually cache global memory.\\
+%\cite{cuda_handbook_a_comprehensive_guide_shared_memory}
+Due to being located on-chip, shared memory is a low-latency, high-bandwidth memory and is mostly used to exchange data between threads in a block.\\
+Physically, in Fermi and Kepler devices shared memory and L1 cache use the same memory,
+but Maxwell-class devices have seperated them due to merging the texture cache and L1 cache.\\
+% reference for multiple times faster
+Additionally to exchange data, shared memory is ideally suited for caching global memory access as it is multiple faster than global memory.
+Note that the speed-up provided by using shared memory is device-dependent.
+Most high-end devices have a global memory bandwidth which is considerable high than that of low-end hardware.
+On the contrary, shared memory bandwidth is mostly dependent on the memory clock rate which remains within a relatively small margin across devices\cite{shane_shared_memory}.
+Later in \ref{shared_access} we will dissect shared memory access in greater detail.\\
 \paragraph{Registers}
-Data used without keywords (shared, global aka device) in a kernel often leads to storage in registers, as long as they can hold it.\\
-There are some thousand registers available to use for each SM, but as they are partitioned between different threads they may only hold values or small structures.\\
+%\cite{http://devblogs.nvidia.com/parallelforall/fast-dynamic-indexing-private-arrays-cuda/}
+%\cite{features and technical speicifications}
+%\cite{cuda_handbook_a_comprehensive_guide_shared_memory}
+%\cite{cuda_handbook_a_comprehensive_guide_shared_memory}
+Data used without keywords to indicate its location are stored in registers, as long as they can hold it.\\
+Even though there are multiple thousands register (between 32K and 128K for current hardware) available per multiprocessor,
+these registers have to be split between concurrently running threads on a SM.\\
+If the compiler realizes that local data is too large to remain in register alone or array indexes can't be resolved at compiler time,
+it will be stored in local memory which is by orders slower than registers or shared memory and is in fact located within the device memory.\\
+This phenomenon is named \emph{register pressure} and should be avoided by investigating local memory usage
+and using shared memory.\\
 \paragraph{Local Memory}
-Data not fitting into registers will be stored in local memory, which has the same characteristics as global memory and should be avoided as much as possible.\\
+Contrary to its name is local memory not located on-chip, but in global memory.
+Therefore it inherits its characteristics, most important the high latency which may limit the application performance immensly.
+To avoid local memory usage, the compiler supports a switch called \emph{--ptxas-options=-v} with which several information regarding
+the generated code is shown, including the used local memory. 
 \paragraph{L1 Cache}
-L1 Cache is on-chip memory, caching access to local memory. Shared memory and L1 cache are sharing the same memory space. \\
+L1 Cache is on-chip memory, caching access to local memory. Shared memory and L1 cache share the same memory on Fermi and Kepler devices. \\
 \paragraph{L2 Cache}
-In contrast to L1 cache, L2 Cache is shared between all multiprocessors and is used to cache access to local and global memory.\\
-% TODO: show when introduced etc.
-\paragraph{Texture Memory \& Cache}
-Texture memory can be used to hold data aswell and is optimized to store two dimensional data.\\
+In contrast to L1 cache, L2 Cache is shared between all multiprocessors and is used to cache access to local and global memory.\footnote{How caching exactly works is dependent on the compute capability}\\
 \subsubsection{Transfer}
-GPUs are connected to a hostsystem via PCI Express, which limits the bandwidth of the memory transfer between host and device.\\
-PCI Express is a point-to-point system (source?) and as data exchange is done using packets,
-there is a significant overhead involved.\\
+% \cite{pcisig.com}
+% \cite{pci_bus_demystified}
+GPUs are typically connected to a hostsystem via PCI Express, which is a bidirectional, point-to-point protocol, allowing even peer-to-peer access.\\
+% explain, page 
 \begin{table*}
 \centering
 \begin{tabular}{c|c|c|c}
-\textbf{Generation} &   \textbf{Transfer-Rate}      & \textbf{per Lane} & \textbf{16-lane}\\
+\textbf{Generation} &   \textbf{Transfer Rate}      & \textbf{per Lane} & \textbf{16-Lane}\\
 \hline\hline
 PCIe 1.0     &   2.5 GT/s               & 2 GBit/s          & 32 Gbit/s\\
 PCIe 2.0     &   5.0 GT/s               & 4 GBit/s          & 64 GBit/s\\
@@ -66,12 +107,7 @@ PCIe 4.0     &   16.0 GT/s              & 15.754 GBit/s     & 252 GBit/s\\
 \caption{Comparison of different iterations of the PCI Express protocol, source: pcisig.com}
 \label{tab:pci_comp}
 \end{table*}
-\emph{**show GPU Global memory transfer rates**}
-As a comparision, GDDR5 (double rate type 5 synchronous graphics random access memory) is able to maintain a bandwith in excess over 100/200 GB/s.
-\\
-As we can see, the GPU memory is several times faster than the PCIe protocol theoretical maximum bandwidth.\\
-This means we will have to try to minimize data transfer between host and device as PCIe is many times slower than device memory.
-We will exploit this knowledge to achieve (?) high computational throughput (?).
-\subsection{Kernel}
-A \emph{Kernel} is a code procedure launched from the host and executed in a grid of threadblocks on the graphics unit.\\
-Once the CUDA code is loaded onto the GPU, a global scheduler distributes the threadblocks to the streaming processors, in which then warp schedulers select 32 threads ( one warp ) for execution.\\
+Even though devices of current hardware use the fast 16-Lane PCI-Express in the third generation, it is still significantly slower than device memory.\\
+%todo: cite!
+For example, GDDR5 with a memory bus width of 384 bits, used as device memory is able to maintain a bandwith exceeding 200 GB/s (the formula for theoretical peak bandwidth is given in \ref{max_bandwidth}).\\
+Therefore, we will have to minimize the occuring data transfer between host and device.\\

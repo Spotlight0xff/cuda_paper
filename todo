@@ -1,10 +1,11 @@
 measure performance:
 
+overlapping:
+* vectorAdd (?) simple func
+
 zero-copy:
 * comparing vectorAdd
-
-pinned memory:
-* simple throughput example
+* comparing matrix transpose (http://arrayfire.com/zero-copy-on-tegra-k1/)
 
 global memory access:
 * matrix multiplication ?

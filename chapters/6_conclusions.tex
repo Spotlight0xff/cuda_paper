@@ -1,7 +1,14 @@
 \section{Conclusions}
 \label{sec:concl}
-The discussed methods and techniques have shown how to transfer and access different kinds of memory efficiently.
-Because we can compute and access data way faster on the device than transfer it to it, it is often better/more efficient
-to do some calculations/computations on the device even if they don't get processed faster, but to avoid memory transfer.
-This results in more GPU code and therefore higher complexity. (?)
+%The discussed methods and techniques have shown how to transfer and access different kinds of memory efficiently.
+%Because we can compute and access data way faster on the device than transfer it to it, it is often better/more efficient
+%to do some calculations/computations on the device even if they don't get processed faster, but to avoid memory transfer.
+%This results in more GPU code and therefore higher complexity. (?)
+The discussed methods and techniques have shown how to transfer and access different kinds of memory efficiently.\\
+We are able to compute (to a degree) and access data way faster on the device than transferring data to it.
+Therefore it is often more efficient to do calculation on the device even if they do not get processed faster, but to avoid slow memory transfer.\\
+NVIDIA provides useful resources and tools for profiling high performance applications like the performance analysis using the Visual Profiler\cite{visual_profiler} or \emph{nvprof}\cite{nvprof}.
+This enables the developer to determine exactly where optimization can be applied.
 
+There are of course many more optimization opportunities available which can be applied to the rapidly evolving field of GPU computing with a great number of applications like computational fluid dynamics\cite{computational_fluid_dynamics}, machine learning\cite{machine_learning} or data science\cite{data_science}.\\
+All these fields benefit heavily from the accelerated computing performed by GPUs and therefore it is most likely that for even higher computational power is pushed.\\

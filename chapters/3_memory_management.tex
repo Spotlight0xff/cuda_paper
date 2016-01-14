@@ -1,41 +1,79 @@
 \section{Memory Management}
 \label{sec:management}
 \subsection{Memory Allocation}
-\label{sec:mem_alloc}
+\label{mem_alloc}
 We need to differentiate the allocation of host and device memory.
-While we can allocate host memory using malloc, but not exclusively, device memory is generally allocated using cudaMalloc.
+
+While we can allocate host memory traditionally using \emph{malloc()}, device memory is generally allocated using cudaMalloc.
 \emph{cudaMalloc()} can allocate a linear memory in the device memory, given the device has enough free memory.
-Important to note is that \emph{cudaMalloc()} is always blocking, as an alternative can cudaMallocAsync be used which uses streams (...?).
-
-
-
-Allocation and Deallocation are expensive operations and as a consequence we should reuse memory whereever it is possible.
-(maybe show timings?)
+% clarify, example
+Important to note is that \emph{cudaMalloc()} is always blocking though one is able to use \emph{cudaMallocAsync} instead and overlap transfer and kernel execution using streams.
+Especially allocation of global memory is expensive and should not be used in performance critical sections.\\
+On a test system with a GTX 750 ( CC 5.0, 1GB global memory), allocating 200MB costs about 60 milliseconds, while deallocation costs just above 200 microseconds.
 \subsubsection{Dynamic Allocation}
 Since compute capability 2.x, CUDA developers can allocate global memory in their kernels using \emph{malloc()} and operate using \emph{memset()} and \emph{memcpy()}.
-\subsubsection{Pitched Layout}
-Due to coalescing constrains, which we will discuss in depth in ~\ref{sec:access}, it is possible to allocate \emph{pitched memory}.\\
-This memory is used for 2D and 3D memory, where the column or row number is not easily divided by a power of 2.\\
-Therefore we can allocate this memory using a padding, where we use more memory than we need, but align the data in a way in which it is easily accessible.\\
-Illustration:
+This allows for faster porting of sequential code running on the CPU (TODO: explain why?).\\
 \subsection{Streams and Synchronization}
 \subsubsection{Synchronization}
-In a highly parallized enviroment like CUDA, it is critical to synchronize the threads to allow benefitial collaboration.\\
-CUDA provides several mechanics for developers to enable and simplify this process. CUDA applications has to synchronize on several depths, first on the threadblock level, where threads have to synchronize using shared memory and \_\_syncthreads() its work.\\
-Secondly interblock synchronization can be implemented using cudaEventSynchronize() and \emph{cudaStreamSynchronize()}. Lastly (?), CUDA events may be used with \emph{cudaStreamWaitEvent()} to enable inter-GPU synchronization.\\
-Additionally, there is the possibility to use atomic operations which are guaranteed to be "unteilbar"?? on device memory and are implemented by the graphics memory controller. 
+\label{sync}
+In a highly parallized enviroment like CUDA, it is critical to synchronize the threads to allow collaboration.\\
+CUDA provides several mechanics for developers to enable and simplify this process.
+CUDA applications have to synchronize on several depths, beginning on the threadblock level, where threads have to synchronize using shared memory and \emph{\_\_syncthreads()}.\\
+Calling $\_\_syncthreads()$ in a kernel forces all threads in the corresponding threadblock to execute until this instruction and only resume execution when all
+threads have reached this point. It is important to note that calling \emph{\_\_syncthreads()} in a diverged codepath results in undefined behaviour.
+This is especially useful for applications which load data from global memory, store them in shared memory and operate later on it.
+In this case the thread work flow would look like the following:\\
+\begin{enumerate}
+    \item load data from global memory into shared memory
+    \item call \_\_syncthreads()
+    \item operate on the shared memory data
+    \item call \_\_syncthreads()
+    \item copy data back to global memory to a result buffer
+\end{enumerate}
+Another form of synchronization has to be used to coordinate blocks within a grid, using \emph{cudaEventSynchronize()} and \emph{cudaStreamSynchronize()}.
+Also, CUDA events may be used with \emph{cudaStreamWaitEvent()} to enable inter-GPU synchronization.\\
+% todo:clarify unteilbar, delete?
+Additionally, there is the possibility to use atomic operations which are guaranteed to operate indivisible data in device or shared memory and are implemented by the graphics memory controller.
+These can be used to implement more traditional synchronization techniques like mutexes or semaphores if required.\\
 \subsubsection{Streams}
-\label{sec:streams}
+\label{streams}
 Operations like memory copy or kernel launches are enqueued into a sequence, which is called a \emph{stream} in CUDA.\\
-It is possible and often advantagous due to parallelized matters to use multiple streams which are able to run concurrently.\\
-Using streams it is possible to implement for example overlapped data transfer.
+Streams can be visualized as pipelines where each can operate mostly in parallel, allowing simultanous data transfer and execution.\\
+Using streams is optional and when no stream is specified, the so-called \emph{default stream} is used to enqueue all operations.\\
+To use multiple streams, they have be created using \emph{cudaStreamCreate} and then applied to a operation as an additional argument.
+The most prominent example of streams is overlapped data transfer with kernel execution
+% todo reference
+and although we do not focus on that, it is an important step to optimize a CUDA application to a more parallelized execution.\\
+Launching a kernel on a specific stream can be done using the fourth optional argument in the kernel launch options and
+issuing a memory copy using the asnychronous counterpart of \emph{cudaMemcpy}, \emph{cudaMemcpyAsync}.
+%todo del?
+It is possible and often advantagous due to parallelized matters to use multiple streams which are able to run concurrently. ( TODO: useless sentence?)\\
 \subsection{Unified Virtual Addressing}
-\label{sec:uva}
-Before the introduction of \emph{Unified Virtual Addressing} (UVA) in CUDA 4, address spaces of device and host were separate, which implied that every memory transfer has to specify which address space to target. (? expression)\\
-UVA combines both address spaces to create a single unified virtual address space in which data from both device and host reside. This concept results in a simplified view of memory and enables the developer to stop using \texttt{cudaMemcpyDeviceToHost} and \texttt{|cudaMemcpyHostToDevice|} and use \texttt{cudaMemcpyDefault} in \emph{cudaMemcpy} methods.
-Because of the unified address space, UVA only works on 64 bit operating systems, as 32 bit systems can only allocate roughly 4 GB and modern computers often exceed these limitations, especially combined with device memory.\\
-UVA also enables \emph{Zero-Copy}~\ref{sec:zerocopy}.
+\label{uva}
+Before the introduction of \emph{Unified Virtual Addressing} (UVA) in CUDA 4, address spaces of device and host were separated, which implied that every memory transfer has to specify on which address space to operate.\\
+UVA combines both address spaces to create a single unified virtual address space in which data from both device and host reside. This concept results in a simplified view of memory and enables the developer to use \emph{cudaMemcpyDefault} instead of explicit \emph{cudaMemcpyHostToDevice} or \emph{cudaMemcpyDeviceToHost} in \emph{cudaMemcpy} methods.
+The CUDA Runtime can determine where each pointer is located and execute the correct operation.(TODO: cudaGetPointerAttributes?)
+Because of the larger unified address space, UVA only works on 64 bit operating systems, as 32 bit systems can only address roughly 4 GB and modern computers often exceed these limitations, especially combined with device memory.\\
+UVA is a key concept in CUDA as it allows greater flexilibility in memory management and a simplified memory view
+as well as enabling more advanced topics as zero-copy \ref{zerocopy} and Unified Memory.
 \subsection{Unified Memory}
-\label{sec:unified_memory}
-\emph{Unified Memory}, introduced in CUDA 6, simplifies memory management with managed memory which is available to device and host equally.\\
-With Unified Memory it is possible to allocate memory using \emph{cudaMallocManaged} and pass the pointer to a kernel, which is able to operate directly on it without the use of copies.
+%\cite{parallel_for_all_unified_memory, }
+\label{unifiedmemory}
+One of the key features of CUDA 6 is \emph{Unified Memory}, which simplified the memory view by introducing a managed memory space which is shared
+across all CPUs and GPUs of the host system.\\
+% todo thus enabling
+This enables developers to write simplified code without the need of explicit memory copies using a single pointer to data
+while the CUDA driver manages the neccessary memory transfers so that the data is always locally available.\\
+A pointer to the managed memory space can be obtained using \emph{cudaMallocManaged()}, allowing transparent access from all parties.\\
+Though the CUDA Runtime tries to enable data locality through data migration,
+it is not better than a capable CUDA programmer in anticipating data transfer and concurrency.\\
+\subsubsection{Fast Prototyping}
+Unified Memory allows accelerated development of a prototype on a GPU or a early port
+and therefore enabling developers to examine the possible advantages of GPU-accelerated computing with little effort.\\
+% todo early early
+This also allows non-experienced programmers which are not familar with CUDA to write early running code.\\
+\subsubsection{Deep Copies}
+Not only for new-comers to GPU programming, but also for experienced developers Unified Memory may prove useful.\\
+For example while accessing complex structure like trees, linked lists or even C++ classes,
+avoiding the need to copy all necessary data to device memory by hand.\\
+Especially for sparsely accessed data this can become a powerful tool to minimize effort while still maintaining high performance.

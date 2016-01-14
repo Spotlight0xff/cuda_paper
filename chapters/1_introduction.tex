@@ -1,15 +1,23 @@
 \section{Introduction}
 \label{sec:intro}
-Performance optimizations of CUDA applications, or any high performance GPU computing program for that matter, can be roughly seperated into three sections.\\
+Performance optimizations of high performance GPU applications can be roughly seperated into three sections.\\
 First, increasing instruction usage to maximize instruction troughput.\\
 Secondly, utilize the GPU hardware to its full extent by maximizing parallelized execution.\\
-While touching parts of the second section, we will focus our optimizating efforts on the third section (? other word), 
-optimizing the memory transfer and access to achieve the highest possible memory throughput/bandwidth(?).\\
+Third, optimizing the memory transfer and access to achieve the highest possible memory throughput, which we will focus on later in section \ref{sec:transfer} and \ref{sec:access}.
 \\
-In the first two chapters we will briefly outline (double?) the CUDA library, hardware architecture and the CUDA memory management.\\
-Then, the main topic of this paper will be highlighted: the optimization of memory transfer and access.\\
-As both GPUs and CUDA itself matured over time and CUDA is backwards-compatible, but not fordware-compatible,
-focus will be on CUDA at version 7.5 and on devices of compute capability 2.x to 5.x.\\
+To utilize the full potential of highly parallized GPUs, also called \emph{devices},
+several frameworks emerged. One of them is CUDA, developed by NVIDIA and therefore targeting only NVIDIA GPUs which
+provides us with a coherent and consistent view.\\
+As there are many NVIDIA GPUs on the market with different features and specifications, they have been
+classified into so-called \textbf{compute capabilities} (CC). At the moment four major versions are available,
+Tesla hardware with compute capability 1.x, Fermi with CC 2.x, Kepler with CC 3.x and the latest Maxwell hardware with CC 5.x.\\
+CUDA itself also matured over time, so some features may only be available on later versions, where we will focus on CUDA 7.5. 
+%\cite{http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capability}
+Therefore is Tesla-class hardware which is not longer supported by CUDA 7\cite{c_prog_guide_cc}, not be covered in this thesis.\\\\
+
+% todo: other words
+In the first two chapters we will lay the foundation for further thoughts with the hardware architecture  and the CUDA memory management.\\
+After that, the main topic of this paper will be highlighted: the optimization of memory transfer and access.\\
 %CUDA platform-independent and device-independent is an API by NVIDIA to utilize GPUs for accelerated computation.\\
 %As both GPUs and CUDA itself matured over time, we will discuss CUDA at version 7.5 and highlight devices of compute capability 2.x to 5.x.\\
 %To enable high performance computation, we have to efficiently pass data around and optimize access to memory.\\

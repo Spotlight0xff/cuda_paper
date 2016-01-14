@@ -15,10 +15,10 @@ HOST_COMPILER ?= g++
 NVCC          := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
 
 # internal flags
-NVCCFLAGS   := -m${TARGET_SIZE} -Xptxas=-v
+NVCCFLAGS   := -m${TARGET_SIZE}# -Xptxas=-v
 CCFLAGS     :=
 LDFLAGS     :=
-
+dbg			:= 1
 # Debug build flags
 ifeq ($(dbg),1)
       NVCCFLAGS += -g -G
@@ -63,23 +63,18 @@ endif
 # Target rules
 all: build
 
-build: vectorAdd_zcp vectorAdd_copy
+build: bandwidth
 
-vectorAdd_zcp.o:vectorAdd_zcp.cu
+bandwidth.o:bandwidth.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-vectorAdd_zcp: vectorAdd_zcp.o
+bandwidth: bandwidth.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 
-vectorAdd_copy.o:vectorAdd_copy.cu
-	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
-
-vectorAdd_copy: vectorAdd_copy.o
-	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 run: build
-	$(EXEC) ./vectorAdd_zcp
+	$(EXEC) ./bandwidth
 
 clean:
-	rm -f vectorAdd_zcp vectorAdd_zcp.o vectorAdd_copy vectorAdd_copy.o 
+	rm -f bandwidth bandwidth.o
 
 clobber: clean
