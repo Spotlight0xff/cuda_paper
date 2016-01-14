@@ -1,0 +1,87 @@
+% Copyright 2007 by Till Tantau
+%
+% This file may be distributed and/or modified
+%
+% 1. under the LaTeX Project Public License and/or
+% 2. under the GNU Public License.
+%
+% See the file doc/licenses/LICENSE for more details.
+
+\ProvidesPackageRCS $Header: beamerinnerthemelfbs.sty,v 1.4 2007/07/23 20:48:30 tantau Exp $
+
+\RequirePackage{marvosym}           % for \MVRightArrow (used in: itemize subitem)
+
+\mode<presentation>
+
+%% 
+%% Listen-Layout
+%% (this is typographically inelegant, but it is according to the provided layout)
+%%
+% 1. Ebene: Quadrat
+\setbeamertemplate{itemize item}[square]
+% 2. Ebene: Pfeil       
+%\defbeamertemplate{itemize subitem}{arrow}{$\rightarrow$}
+\defbeamertemplate{itemize subitem}{arrow}{\MVRightArrow}       % from package marvosym
+
+\setbeamertemplate{itemize subitem}[arrow]
+%           typografically nicer: trigangle (but it would conflict with the given layout...)
+%\setbeamertemplate{itemize subitem}[triangle]
+
+% 3. Ebene: rechte Guillemets (zwei größer-als-Zeichen: >> )
+\defbeamertemplate{itemize subsubitem}{double arrow}{\frqq}
+\setbeamertemplate{itemize subsubitem}[double arrow]
+
+
+
+\AtBeginSection[] % Do nothing for \section*
+{
+\begin{frame}<beamer>
+  \frametitle{~}
+  \vspace{3cm}
+  \begin {beamercolorbox}[sep=0pt]{section}
+    \usebeamerfont{section}\insertsection
+  \end {beamercolorbox}
+\end{frame}
+}
+
+\AtBeginDocument
+{
+  \iflanguage{ngerman}{\pdfbookmark[2]{Titelseite}{title}}{}
+  \iflanguage{english}{\pdfbookmark[2]{Title page}{title}}{}
+
+  \frame[plain,t]{\titlepage}
+}
+
+\AtEndDocument
+{
+
+  \begin{frame}[plain,t]
+    \hfill\insertlogo
+
+    \vspace{4cm}
+    \scriptsize
+    \protect\iflanguage{ngerman}{Vielen Dank f\"ur Ihre Aufmerksamkeit!}{}
+    \protect\iflanguage{english}{Thank you for your kind attention!}{}
+
+
+    \vspace{4ex}
+    \textbf{\insertauthor}\ifx\printemail\@empty\else{~--~{\color{rwthblue}\printemail}}\fi
+
+    \vspace{2ex}
+    RWTH Aachen University\\
+    Templergraben 55\\
+    52056 Aachen
+
+    \vspace{2ex}
+    {\color{rwthblue}\url{\printwebaddress}}
+  \end{frame}
+}
+
+
+%\setbeamertemplate{itemize item}[circle]
+%\setbeamertemplate{itemize subitem}[default]
+%\setbeamertemplate{itemize subsubitem}[default]
+%\setbeamertemplate{sections/subsections in toc}[ball unnumbered]
+
+\mode<all>
+
